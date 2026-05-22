@@ -6,6 +6,9 @@ import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.UserService;
 import com.innowise.userservice.specification.UserSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -18,6 +21,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     public UserRepository userRepository;
 
+    @CacheEvict(value = "user", key = "#result.id")
     public User createUser(User user) throws DuplicateResourceException, ServiceException {
         if (user.getName() == null || user.getName().isBlank()) {
             throw new ServiceException("Name is required");
@@ -28,6 +32,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    @Cacheable(value = "user", key = "#id")
     public User getUserById(Long id) throws ResourceNotFoundException {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -40,7 +45,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll(spec, pageable);
     }
 
-    public User updateUser(Long id, User updatedUser) throws ResourceNotFoundException, ServiceException {
+    @CachePut(value = "user", key = "#id")
+    public User updateUser(Long id, User updatedUser) throws ResourceNotFoundException, DuplicateResourceException, ServiceException {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
@@ -65,6 +71,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(existingUser);
     }
 
+    @CacheEvict(value = "user", key = "#id")
     @Transactional
     public void setActiveStatus(Long id, boolean active) throws ResourceNotFoundException {
         if (!userRepository.existsById(id)) {
@@ -73,6 +80,7 @@ public class UserServiceImpl implements UserService {
         userRepository.setActiveStatus(id, active);
     }
 
+    @CacheEvict(value = "user", key = "#id")
     @Transactional
     public void deleteUser(Long id) throws ResourceNotFoundException {
         User user = userRepository.findById(id)

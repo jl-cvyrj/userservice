@@ -8,6 +8,7 @@ import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.PaymentCardService;
 import com.innowise.userservice.specification.PaymentCardSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,6 +26,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     @Autowired
     public UserRepository userRepository;
 
+    @CacheEvict(value = "user", key = "#paymentCard.user.id")
     public PaymentCard createPaymentCard(PaymentCard paymentCard) throws BusinessLogicException, ResourceNotFoundException {
         Long userId = paymentCard.getUser().getId();
 
@@ -55,6 +57,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
         return paymentCardRepository.findAll(spec, pageable);
     }
 
+    @CacheEvict(value = "user", key = "#result.user.id")
     public PaymentCard updatePaymentCard(Long id, PaymentCard updatedPaymentCard) throws ResourceNotFoundException {
         PaymentCard existingCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PaymentCard not found with id: " + id));
@@ -73,6 +76,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
         return paymentCardRepository.save(existingCard);
     }
 
+    @CacheEvict(value = "user", key = "#result.user.id")
     @Transactional
     public void setActiveStatus(Long id, boolean active) throws ResourceNotFoundException {
         if (!paymentCardRepository.existsById(id)) {
