@@ -1,5 +1,6 @@
 package com.innowise.userservice.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -7,6 +8,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users", indexes = {
@@ -43,6 +46,18 @@ public class User {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<PaymentCard> paymentCards = new ArrayList<>();
+
+    public List<PaymentCard> getPaymentCards() {
+        return paymentCards;
+    }
+
+    public void setPaymentCards(List<PaymentCard> paymentCards) {
+        this.paymentCards = paymentCards;
+    }
 
     protected User() {}
 
@@ -116,6 +131,16 @@ public class User {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public void addPaymentCard(PaymentCard card) {
+        paymentCards.add(card);
+        card.setUser(this);
+    }
+
+    public void removePaymentCard(PaymentCard card) {
+        paymentCards.remove(card);
+        card.setUser(null);
     }
 
     @Override

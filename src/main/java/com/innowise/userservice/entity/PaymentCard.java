@@ -23,8 +23,9 @@ public class PaymentCard {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "number", nullable = false, unique = true, length = 16)
     private String number;
@@ -48,8 +49,8 @@ public class PaymentCard {
 
     protected PaymentCard() {}
 
-    public PaymentCard(Long userId, String number, String holder, LocalDate expirationDate, boolean active) {
-        this.userId = userId;
+    public PaymentCard(User user, String number, String holder, LocalDate expirationDate, boolean active) {
+        this.user = user;
         this.number = number;
         this.holder = holder;
         this.expirationDate = expirationDate;
@@ -60,8 +61,8 @@ public class PaymentCard {
         return id;
     }
 
-    public Long getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
     public String getNumber() {
@@ -88,12 +89,16 @@ public class PaymentCard {
         return updatedAt;
     }
 
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public void setNumber(String number) {
@@ -124,7 +129,7 @@ public class PaymentCard {
     public String toString() {
         final StringBuilder sb = new StringBuilder("PaymentCard{");
         sb.append("id=").append(id);
-        sb.append(", userId=").append(userId);
+        sb.append(", userId=").append(user != null ? user.getId() : null);
         sb.append(", number='").append(number).append('\'');
         sb.append(", holder='").append(holder).append('\'');
         sb.append(", expirationDate=").append(expirationDate);
