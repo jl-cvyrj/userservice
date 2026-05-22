@@ -1,7 +1,7 @@
 package com.innowise.userservice.service.impl;
 
 import com.innowise.userservice.entity.User;
-import com.innowise.userservice.exception.ServiceException;
+import com.innowise.userservice.exception.*;
 import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.UserService;
 import com.innowise.userservice.specification.UserSpecifications;
@@ -18,30 +18,31 @@ public class UserServiceImpl implements UserService {
     @Autowired
     public UserRepository userRepository;
 
-    public User createUser(User user) throws ServiceException {
-        if (user.getName().isBlank()) {
-            throw new ServiceException();
+    public User createUser(User user) throws DuplicateResourceException, ServiceException {
+        if (user.getName() == null || user.getName().isBlank()) {
+            throw new ServiceException("Name is required");
+        }
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new DuplicateResourceException("Email already exists: " + user.getEmail());
         }
         return userRepository.save(user);
     }
 
-    public User getUserById(Long id) throws ServiceException {
+    public User getUserById(Long id) throws ResourceNotFoundException {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ServiceException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
     public Page<User> getAllUsers(String name, String surname, Pageable pageable) {
-
         Specification<User> spec = Specification
                 .where(UserSpecifications.hasName(name))
                 .and(UserSpecifications.hasSurname(surname));
-
         return userRepository.findAll(spec, pageable);
     }
 
-    public User updateUser(Long id, User updatedUser) throws ServiceException {
+    public User updateUser(Long id, User updatedUser) throws ResourceNotFoundException, ServiceException {
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new ServiceException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
         if (updatedUser.getName() != null && !updatedUser.getName().isBlank()) {
             existingUser.setName(updatedUser.getName());
@@ -53,6 +54,10 @@ public class UserServiceImpl implements UserService {
             existingUser.setBirthDate(updatedUser.getBirthDate());
         }
         if (updatedUser.getEmail() != null && !updatedUser.getEmail().isBlank()) {
+            if (!updatedUser.getEmail().equals(existingUser.getEmail()) &&
+                    userRepository.existsByEmail(updatedUser.getEmail())) {
+                throw new DuplicateResourceException("Email already exists: " + updatedUser.getEmail());
+            }
             existingUser.setEmail(updatedUser.getEmail());
         }
         existingUser.setActive(updatedUser.isActive());
@@ -61,17 +66,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Transactional
-    public void setActiveStatus(Long id, boolean active) throws ServiceException {
+    public void setActiveStatus(Long id, boolean active) throws ResourceNotFoundException {
         if (!userRepository.existsById(id)) {
-            throw new ServiceException("User not found with id: " + id);
+            throw new ResourceNotFoundException("User not found with id: " + id);
         }
         userRepository.setActiveStatus(id, active);
     }
 
     @Transactional
-    public void deleteUser(Long id) throws ServiceException {
+    public void deleteUser(Long id) throws ResourceNotFoundException {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ServiceException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         userRepository.delete(user);
     }
 }

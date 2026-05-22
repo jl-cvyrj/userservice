@@ -20,4 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     void setActiveStatus(@Param("id") Long id, @Param("active") boolean active);
 
     List<User> findByNameAndSurname(String name, String surname);
+
+    boolean existsByEmail(String email);
 }

@@ -2,7 +2,7 @@ package com.innowise.userservice.controller;
 
 import com.innowise.userservice.dto.PaymentCardDto;
 import com.innowise.userservice.entity.PaymentCard;
-import com.innowise.userservice.exception.ServiceException;
+import com.innowise.userservice.exception.*;
 import com.innowise.userservice.mapper.PaymentCardMapper;
 import com.innowise.userservice.service.impl.PaymentCardServiceImpl;
 import jakarta.validation.Valid;
@@ -25,41 +25,37 @@ public class PaymentCardController {
     private PaymentCardMapper paymentCardMapper;
 
     @PostMapping
-    public PaymentCardDto createCard(@Valid @RequestBody PaymentCardDto cardDto) throws ServiceException {
+    public ResponseEntity<PaymentCardDto> createCard(@Valid @RequestBody PaymentCardDto cardDto) throws BusinessLogicException, ResourceNotFoundException {
         PaymentCard card = paymentCardMapper.toEntity(cardDto);
         PaymentCard savedCard = paymentCardService.createPaymentCard(card);
-        return paymentCardMapper.toDto(savedCard);
+        return ResponseEntity.status(HttpStatus.CREATED).body(paymentCardMapper.toDto(savedCard));
     }
 
     @GetMapping("/{id}")
-    public PaymentCardDto getCardById(@PathVariable Long id) throws ServiceException {
+    public ResponseEntity<PaymentCardDto> getCardById(@PathVariable Long id) throws ResourceNotFoundException {
         PaymentCard card = paymentCardService.getPaymentCardById(id);
-        return paymentCardMapper.toDto(card);
+        return ResponseEntity.ok(paymentCardMapper.toDto(card));
     }
 
     @GetMapping("/user/{userId}")
-    public List<PaymentCardDto> getCardsByUserId(@PathVariable Long userId) {
+    public ResponseEntity<List<PaymentCardDto>> getCardsByUserId(@PathVariable Long userId) {
         List<PaymentCard> cards = paymentCardService.getCardsByUserId(userId);
-        return cards.stream()
+        List<PaymentCardDto> cardDtos = cards.stream()
                 .map(paymentCardMapper::toDto)
                 .collect(Collectors.toList());
+        return ResponseEntity.ok(cardDtos);
     }
 
     @PutMapping("/{id}")
-    public PaymentCardDto updateCard(@PathVariable Long id, @Valid @RequestBody PaymentCardDto cardDto) throws ServiceException {
+    public ResponseEntity<PaymentCardDto> updateCard(@PathVariable Long id, @Valid @RequestBody PaymentCardDto cardDto) throws ResourceNotFoundException {
         PaymentCard card = paymentCardMapper.toEntity(cardDto);
         PaymentCard updatedCard = paymentCardService.updatePaymentCard(id, card);
-        return paymentCardMapper.toDto(updatedCard);
+        return ResponseEntity.ok(paymentCardMapper.toDto(updatedCard));
     }
 
     @PatchMapping("/{id}/active")
-    public void setActiveStatus(@PathVariable Long id, @RequestParam boolean active) throws ServiceException {
+    public ResponseEntity<Void> setActiveStatus(@PathVariable Long id, @RequestParam boolean active) throws ResourceNotFoundException {
         paymentCardService.setActiveStatus(id, active);
-    }
-
-    @ExceptionHandler(ServiceException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<String> handleServiceException(ServiceException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+        return ResponseEntity.noContent().build();
     }
 }
