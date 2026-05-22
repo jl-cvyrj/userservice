@@ -29,7 +29,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: Run tests (skip integration tests)
+      - name: Run tests
         run: mvn test -Dtest=*ServiceTest
 
   sonarqube:
@@ -37,10 +37,21 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
       - name: SonarQube Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=userservice
+            -Dsonar.organization=jl-cvyrj
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.java.binaries=target/classes
 
   docker:
     runs-on: ubuntu-latest
