@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: userservice-postgres
+    environment:
+      POSTGRES_DB: userservice_db
+      POSTGRES_USER: karalina
+      POSTGRES_PASSWORD: karalina
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    network_mode: host
+
+  redis:
+    image: redis:7-alpine
+    container_name: userservice-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    network_mode: host
+
+  app:
+    build: .
+    container_name: userservice-app
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DB_URL: jdbc:postgresql://localhost:5432/userservice_db
+      DB_USERNAME: karalina
+      DB_PASSWORD: karalina
+      SPRING_DATA_REDIS_HOST: localhost
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+    network_mode: host
+
+volumes:
+  postgres_data:
+  redis_data:
