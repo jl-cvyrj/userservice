@@ -21,11 +21,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     public UserRepository userRepository;
 
-    @CacheEvict(value = "user", key = "#result.id")
     public User createUser(User user) throws DuplicateResourceException, ServiceException {
-        if (user.getName() == null || user.getName().isBlank()) {
-            throw new ServiceException("Name is required");
-        }
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new DuplicateResourceException("Email already exists: " + user.getEmail());
         }
@@ -34,7 +30,7 @@ public class UserServiceImpl implements UserService {
 
     @Cacheable(value = "user", key = "#id")
     public User getUserById(Long id) throws ResourceNotFoundException {
-        return userRepository.findById(id)
+        return userRepository.findByIdWithCards(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
@@ -45,6 +41,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll(spec, pageable);
     }
 
+    @Transactional
     @CachePut(value = "user", key = "#id")
     public User updateUser(Long id, User updatedUser) throws ResourceNotFoundException, DuplicateResourceException, ServiceException {
         User existingUser = userRepository.findById(id)

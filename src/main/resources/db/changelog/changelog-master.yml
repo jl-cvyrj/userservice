@@ -119,3 +119,27 @@ databaseChangeLog:
                   defaultValueComputed: CURRENT_TIMESTAMP
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 5
+      author: karalina
+      changes:
+        - createIndex:
+            indexName: index_users_surname
+            tableName: users
+            columns:
+              - column:
+                  name: surname
+              - column:
+                  name: name
+        - createIndex:
+            indexName: index_payment_cards_number
+            tableName: payment_cards
+            columns:
+              - column:
+                  name: number
+        - createIndex:
+            indexName: index_payment_cards_user
+            tableName: payment_cards
+            columns:
+              - column:
+                  name: user_id

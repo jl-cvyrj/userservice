@@ -4,30 +4,29 @@ import com.innowise.userservice.dto.PaymentCardDto;
 import com.innowise.userservice.entity.PaymentCard;
 import com.innowise.userservice.exception.*;
 import com.innowise.userservice.mapper.PaymentCardMapper;
-import com.innowise.userservice.service.impl.PaymentCardServiceImpl;
+import com.innowise.userservice.service.PaymentCardService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/payment-cards")
 public class PaymentCardController {
 
     @Autowired
-    private PaymentCardServiceImpl paymentCardService;
+    private PaymentCardService paymentCardService;
 
     @Autowired
     private PaymentCardMapper paymentCardMapper;
 
     @PostMapping
-    public ResponseEntity<PaymentCardDto> createCard(@Valid @RequestBody PaymentCardDto cardDto) throws BusinessLogicException, ResourceNotFoundException {
-        PaymentCard card = paymentCardMapper.toEntity(cardDto);
-        PaymentCard savedCard = paymentCardService.createPaymentCard(card);
+    public ResponseEntity<PaymentCardDto> createCard(@Valid @RequestBody PaymentCardDto paymentCardDto) throws BusinessLogicException, ResourceNotFoundException {
+        PaymentCard savedCard = paymentCardService.createPaymentCard(paymentCardDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentCardMapper.toDto(savedCard));
     }
 
@@ -37,19 +36,9 @@ public class PaymentCardController {
         return ResponseEntity.ok(paymentCardMapper.toDto(card));
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<PaymentCardDto>> getCardsByUserId(@PathVariable Long userId) {
-        List<PaymentCard> cards = paymentCardService.getCardsByUserId(userId);
-        List<PaymentCardDto> cardDtos = cards.stream()
-                .map(paymentCardMapper::toDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(cardDtos);
-    }
-
     @PutMapping("/{id}")
     public ResponseEntity<PaymentCardDto> updateCard(@PathVariable Long id, @Valid @RequestBody PaymentCardDto cardDto) throws ResourceNotFoundException {
-        PaymentCard card = paymentCardMapper.toEntity(cardDto);
-        PaymentCard updatedCard = paymentCardService.updatePaymentCard(id, card);
+        PaymentCard updatedCard = paymentCardService.updatePaymentCard(id, cardDto);
         return ResponseEntity.ok(paymentCardMapper.toDto(updatedCard));
     }
 
@@ -57,5 +46,14 @@ public class PaymentCardController {
     public ResponseEntity<Void> setActiveStatus(@PathVariable Long id, @RequestParam boolean active) throws ResourceNotFoundException {
         paymentCardService.setActiveStatus(id, active);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<PaymentCardDto>> getAllPaymentCards(@RequestParam (required = false) String holder, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PaymentCard> allPaymentCards = paymentCardService.getAllPaymentCards(holder, pageable);
+        Page<PaymentCardDto> allPaymentCardDtos = allPaymentCards.map(paymentCardMapper::toDto);
+        return ResponseEntity.ok(allPaymentCardDtos);
     }
 }

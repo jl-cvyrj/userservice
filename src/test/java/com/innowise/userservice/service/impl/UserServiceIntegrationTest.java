@@ -75,13 +75,6 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    void createUser_NullName_ShouldThrowException() {
-        user.setName(null);
-
-        assertThrows(Exception.class, () -> userService.createUser(user));
-    }
-
-    @Test
     void getUserById_ShouldReturnUser() throws Exception {
         User savedUser = userRepository.save(user);
 

@@ -11,7 +11,7 @@ public class PaymentCardDto {
     private Long userId;
 
     @NotBlank(message = "Card number is required")
-    @Size(min = 16, max = 19, message = "Card number must be between 16 and 19 characters")
+    @Size(min = 16, max = 16, message = "Card number must be exactly 16 characters")
     @Pattern(regexp = "\\d+", message = "Card number must contain only digits")
     private String number;
 

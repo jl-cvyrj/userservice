@@ -13,10 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "users", indexes = {
-        @Index(name = "index_user_name_surname",
-                columnList = "surname, name")
-})
+@Table(name = "users")
 @EntityListeners(AuditingEntityListener.class)
 public class User implements Serializable {
 

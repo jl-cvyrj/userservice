@@ -10,12 +10,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "payment_cards", indexes = {
-        @Index(name = "index_payment_card_number",
-                columnList = "number"),
-        @Index(name = "index_payment_card_user_id",
-                columnList = "user_id, holder")
-})
+@Table(name = "payment_cards")
 @EntityListeners(AuditingEntityListener.class)
 public class PaymentCard implements Serializable {
 

@@ -1,5 +1,6 @@
 package com.innowise.userservice.service.impl;
 
+import com.innowise.userservice.dto.PaymentCardDto;
 import com.innowise.userservice.entity.PaymentCard;
 import com.innowise.userservice.entity.User;
 import com.innowise.userservice.exception.BusinessLogicException;
@@ -49,7 +50,7 @@ class PaymentCardServiceIntegrationTest {
     private PaymentCardRepository cardRepository;
 
     private User user;
-    private PaymentCard card;
+    private PaymentCardDto paymentCardDto;
 
     @BeforeEach
     void setUp() {
@@ -59,12 +60,17 @@ class PaymentCardServiceIntegrationTest {
         user = new User("John", "Doe", LocalDate.of(1990, 1, 1), "john@example.com", true);
         user = userRepository.save(user);
 
-        card = new PaymentCard(user, "1234567890123456", "John Doe", LocalDate.of(2028, 12, 31), true);
+        paymentCardDto = new PaymentCardDto();
+        paymentCardDto.setUserId(user.getId());
+        paymentCardDto.setNumber("1234567890123456");
+        paymentCardDto.setHolder("John Doe");
+        paymentCardDto.setExpirationDate(LocalDate.of(2028, 12, 31));
+        paymentCardDto.setActive(true);
     }
 
     @Test
     void createPaymentCard_ShouldSaveCardToDatabase() throws Exception {
-        PaymentCard saved = cardService.createPaymentCard(card);
+        PaymentCard saved = cardService.createPaymentCard(paymentCardDto);
 
         assertNotNull(saved.getId());
         assertEquals("1234567890123456", saved.getNumber());
@@ -72,33 +78,44 @@ class PaymentCardServiceIntegrationTest {
         PaymentCard fromDb = cardRepository.findById(saved.getId()).orElse(null);
         assertNotNull(fromDb);
         assertEquals("John Doe", fromDb.getHolder());
+        assertEquals(user.getId(), fromDb.getUser().getId());
     }
 
     @Test
     void createPaymentCard_UserNotFound_ShouldThrowResourceNotFoundException() {
-        card.getUser().setId(999L);
+        paymentCardDto.setUserId(999L);
 
-        assertThrows(ResourceNotFoundException.class, () -> cardService.createPaymentCard(card));
+        assertThrows(ResourceNotFoundException.class, () -> cardService.createPaymentCard(paymentCardDto));
     }
 
     @Test
-    void createPaymentCard_MoreThan5ActiveCards_ShouldThrowBusinessLogicException() throws Exception {
+    void createPaymentCard_MoreThan5Cards_ShouldThrowBusinessLogicException() throws Exception {
         for (int i = 0; i < 5; i++) {
-            PaymentCard c = new PaymentCard(user, "11112222333344" + i, "John Doe", LocalDate.of(2028, 12, 31), true);
-            cardService.createPaymentCard(c);
+            PaymentCardDto cardDto = new PaymentCardDto();
+            cardDto.setUserId(user.getId());
+            cardDto.setNumber("11112222333344" + i);
+            cardDto.setHolder("John Doe");
+            cardDto.setExpirationDate(LocalDate.of(2028, 12, 31));
+            cardDto.setActive(true);
+            cardService.createPaymentCard(cardDto);
         }
 
-        PaymentCard sixthCard = new PaymentCard(user, "9999888877776666", "John Doe", LocalDate.of(2028, 12, 31), true);
+        PaymentCardDto sixthCard = new PaymentCardDto();
+        sixthCard.setUserId(user.getId());
+        sixthCard.setNumber("9999888877776666");
+        sixthCard.setHolder("John Doe");
+        sixthCard.setExpirationDate(LocalDate.of(2028, 12, 31));
+        sixthCard.setActive(true);
 
         assertThrows(BusinessLogicException.class, () -> cardService.createPaymentCard(sixthCard));
 
-        long count = cardRepository.countActiveCardsByUserId(user.getId());
+        long count = cardRepository.countPaymentCardsByUserId(user.getId());
         assertEquals(5, count);
     }
 
     @Test
     void getPaymentCardById_ShouldReturnCard() throws Exception {
-        PaymentCard saved = cardService.createPaymentCard(card);
+        PaymentCard saved = cardService.createPaymentCard(paymentCardDto);
 
         PaymentCard found = cardService.getPaymentCardById(saved.getId());
 
@@ -114,9 +131,15 @@ class PaymentCardServiceIntegrationTest {
 
     @Test
     void getCardsByUserId_ShouldReturnListOfCards() throws Exception {
-        cardService.createPaymentCard(card);
-        PaymentCard card2 = new PaymentCard(user, "9999888877776666", "John Doe", LocalDate.of(2028, 12, 31), true);
-        cardService.createPaymentCard(card2);
+        cardService.createPaymentCard(paymentCardDto);
+
+        PaymentCardDto card2Dto = new PaymentCardDto();
+        card2Dto.setUserId(user.getId());
+        card2Dto.setNumber("9999888877776666");
+        card2Dto.setHolder("John Doe");
+        card2Dto.setExpirationDate(LocalDate.of(2028, 12, 31));
+        card2Dto.setActive(true);
+        cardService.createPaymentCard(card2Dto);
 
         List<PaymentCard> cards = cardService.getCardsByUserId(user.getId());
 
@@ -132,13 +155,18 @@ class PaymentCardServiceIntegrationTest {
 
     @Test
     void updatePaymentCard_ShouldUpdateCard() throws Exception {
-        PaymentCard saved = cardService.createPaymentCard(card);
-        saved.setNumber("9999888877776666");
-        saved.setActive(false);
+        PaymentCard saved = cardService.createPaymentCard(paymentCardDto);
 
-        PaymentCard updated = cardService.updatePaymentCard(saved.getId(), saved);
+        PaymentCardDto updateDto = new PaymentCardDto();
+        updateDto.setNumber("9999888877776666");
+        updateDto.setHolder("Johnny Doe");
+        updateDto.setExpirationDate(LocalDate.of(2030, 12, 31));
+        updateDto.setActive(false);
+
+        PaymentCard updated = cardService.updatePaymentCard(saved.getId(), updateDto);
 
         assertEquals("9999888877776666", updated.getNumber());
+        assertEquals("Johnny Doe", updated.getHolder());
         assertFalse(updated.isActive());
 
         PaymentCard fromDb = cardRepository.findById(saved.getId()).orElse(null);
@@ -148,14 +176,15 @@ class PaymentCardServiceIntegrationTest {
 
     @Test
     void updatePaymentCard_NotFound_ShouldThrowResourceNotFoundException() {
-        card.setId(999L);
+        PaymentCardDto updateDto = new PaymentCardDto();
+        updateDto.setNumber("9999888877776666");
 
-        assertThrows(ResourceNotFoundException.class, () -> cardService.updatePaymentCard(999L, card));
+        assertThrows(ResourceNotFoundException.class, () -> cardService.updatePaymentCard(999L, updateDto));
     }
 
     @Test
     void setActiveStatus_ShouldUpdateCardStatus() throws Exception {
-        PaymentCard saved = cardService.createPaymentCard(card);
+        PaymentCard saved = cardService.createPaymentCard(paymentCardDto);
 
         cardService.setActiveStatus(saved.getId(), false);
 

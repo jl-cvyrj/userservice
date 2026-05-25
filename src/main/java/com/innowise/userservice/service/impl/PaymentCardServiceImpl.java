@@ -1,5 +1,6 @@
 package com.innowise.userservice.service.impl;
 
+import com.innowise.userservice.dto.PaymentCardDto;
 import com.innowise.userservice.entity.PaymentCard;
 import com.innowise.userservice.entity.User;
 import com.innowise.userservice.exception.*;
@@ -26,19 +27,25 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     @Autowired
     public UserRepository userRepository;
 
-    @CacheEvict(value = "user", key = "#paymentCard.user.id")
-    public PaymentCard createPaymentCard(PaymentCard paymentCard) throws BusinessLogicException, ResourceNotFoundException {
-        Long userId = paymentCard.getUser().getId();
+    @CacheEvict(value = "user", key = "#paymentCardDto.userId")
+    public PaymentCard createPaymentCard(PaymentCardDto paymentCardDto) throws BusinessLogicException, ResourceNotFoundException {
+
+        Long userId = paymentCardDto.getUserId();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        int activeCards = paymentCardRepository.countActiveCardsByUserId(userId);
-        if (activeCards >= 5) {
-            throw new BusinessLogicException("User cannot have more than 5 active cards");
+        int paymentCards = paymentCardRepository.countPaymentCardsByUserId(userId);
+        if (paymentCards >= 5) {
+            throw new BusinessLogicException("User cannot have more than 5 cards");
         }
 
-        paymentCard.setUser(user);
+        PaymentCard paymentCard = new PaymentCard(user,
+                paymentCardDto.getNumber(),
+                paymentCardDto.getHolder(),
+                paymentCardDto.getExpirationDate(),
+                paymentCardDto.isActive());
+
         return paymentCardRepository.save(paymentCard);
     }
 
@@ -57,27 +64,28 @@ public class PaymentCardServiceImpl implements PaymentCardService {
         return paymentCardRepository.findAll(spec, pageable);
     }
 
+    @Transactional
     @CacheEvict(value = "user", key = "#result.user.id")
-    public PaymentCard updatePaymentCard(Long id, PaymentCard updatedPaymentCard) throws ResourceNotFoundException {
+    public PaymentCard updatePaymentCard(Long id, PaymentCardDto updatedPaymentCardDto) throws ResourceNotFoundException {
         PaymentCard existingCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PaymentCard not found with id: " + id));
 
-        if (updatedPaymentCard.getNumber() != null) {
-            existingCard.setNumber(updatedPaymentCard.getNumber());
+        if (updatedPaymentCardDto.getNumber() != null) {
+            existingCard.setNumber(updatedPaymentCardDto.getNumber());
         }
-        if (updatedPaymentCard.getHolder() != null) {
-            existingCard.setHolder(updatedPaymentCard.getHolder());
+        if (updatedPaymentCardDto.getHolder() != null) {
+            existingCard.setHolder(updatedPaymentCardDto.getHolder());
         }
-        if (updatedPaymentCard.getExpirationDate() != null) {
-            existingCard.setExpirationDate(updatedPaymentCard.getExpirationDate());
+        if (updatedPaymentCardDto.getExpirationDate() != null) {
+            existingCard.setExpirationDate(updatedPaymentCardDto.getExpirationDate());
         }
-        existingCard.setActive(updatedPaymentCard.isActive());
+        existingCard.setActive(updatedPaymentCardDto.isActive());
 
         return paymentCardRepository.save(existingCard);
     }
 
-    @CacheEvict(value = "user", key = "#result.user.id")
     @Transactional
+    @CacheEvict(value = "user", key = "#id")
     public void setActiveStatus(Long id, boolean active) throws ResourceNotFoundException {
         if (!paymentCardRepository.existsById(id)) {
             throw new ResourceNotFoundException("PaymentCard not found with id: " + id);

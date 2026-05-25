@@ -30,7 +30,7 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
       - name: Run tests
-        run: mvn test -Dtest=*ServiceTest
+        run: mvn test
 
   sonarqube:
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=userservice
+            -Dsonar.projectKey=jl-cvyrj_userservice
             -Dsonar.organization=jl-cvyrj
             -Dsonar.host.url=https://sonarcloud.io
             -Dsonar.java.binaries=target/classes
