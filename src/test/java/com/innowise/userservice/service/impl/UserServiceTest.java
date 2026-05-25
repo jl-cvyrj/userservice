@@ -1,7 +1,8 @@
 package com.innowise.userservice.service.impl;
 
 import com.innowise.userservice.entity.User;
-import com.innowise.userservice.exception.*;
+import com.innowise.userservice.exception.DuplicateResourceException;
+import com.innowise.userservice.exception.ResourceNotFoundException;
 import com.innowise.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,14 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
+    private static final String USER_EMAIL = "john@example.com";
+    private static final String USER_NAME = "John";
+    private static final String USER_SURNAME = "Doe";
+    private static final String UPDATED_NAME = "Johnny";
+
+    private static final Long VALID_ID = 1L;
+    private static final Long NOT_FOUND_ID = 999L;
+
     @Mock
     private UserRepository userRepository;
 
@@ -36,24 +45,24 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        user = new User("John", "Doe", LocalDate.of(1990, 1, 1), "john@example.com", true);
-        user.setId(1L);
+        user = new User(USER_NAME, USER_SURNAME, LocalDate.of(1990, 1, 1), USER_EMAIL, true);
+        user.setId(VALID_ID);
     }
 
     @Test
-    void createUser_Success_ShouldReturnUser() throws Exception {
+    void createUserSuccessShouldReturnUser() throws Exception {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         User result = userService.createUser(user);
 
         assertNotNull(result);
-        assertEquals("john@example.com", result.getEmail());
+        assertEquals(USER_EMAIL, result.getEmail());
         verify(userRepository).save(any(User.class));
     }
 
     @Test
-    void createUser_DuplicateEmail_ShouldThrowDuplicateResourceException() {
+    void createUserDuplicateEmailShouldThrowDuplicateResourceException() {
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
         assertThrows(DuplicateResourceException.class, () -> userService.createUser(user));
@@ -61,7 +70,7 @@ class UserServiceTest {
     }
 
     @Test
-    void createUser_WithNullName_ShouldStillSave() throws Exception {
+    void createUserWithNullNameShouldStillSave() throws Exception {
         user.setName(null);
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(user);
@@ -72,64 +81,65 @@ class UserServiceTest {
     }
 
     @Test
-    void getUserById_Success_ShouldReturnUser() throws Exception {
-        when(userRepository.findByIdWithCards(1L)).thenReturn(Optional.of(user));
+    void getUserByIdSuccessShouldReturnUser() throws Exception {
+        when(userRepository.findByIdWithCards(VALID_ID)).thenReturn(Optional.of(user));
 
-        User result = userService.getUserById(1L);
+        User result = userService.getUserById(VALID_ID);
 
         assertNotNull(result);
-        assertEquals("John", result.getName());
+        assertEquals(USER_NAME, result.getName());
     }
 
     @Test
-    void getUserById_NotFound_ShouldThrowResourceNotFoundException() {
-        when(userRepository.findByIdWithCards(999L)).thenReturn(Optional.empty());
+    void getUserByIdNotFoundShouldThrowResourceNotFoundException() {
+        when(userRepository.findByIdWithCards(NOT_FOUND_ID)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(999L));
+        assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(NOT_FOUND_ID));
     }
 
     @Test
-    void updateUser_Success_ShouldReturnUpdatedUser() throws Exception {
-        User updatedUser = new User("Johnny", "Doe", LocalDate.of(1990, 1, 1), "john@example.com", true);
+    void updateUserSuccessShouldReturnUpdatedUser() throws Exception {
+        User updatedUser = new User(UPDATED_NAME, USER_SURNAME, LocalDate.of(1990, 1, 1), USER_EMAIL, true);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findById(VALID_ID)).thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class))).thenReturn(updatedUser);
 
-        User result = userService.updateUser(1L, updatedUser);
+        User result = userService.updateUser(VALID_ID, updatedUser);
 
-        assertEquals("Johnny", result.getName());
+        assertEquals(UPDATED_NAME, result.getName());
     }
 
     @Test
-    void deleteUser_Success_ShouldDeleteUser() throws Exception {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    void deleteUserSuccessShouldDeleteUser() {
+        when(userRepository.findById(VALID_ID)).thenReturn(Optional.of(user));
         doNothing().when(userRepository).delete(any(User.class));
 
-        assertDoesNotThrow(() -> userService.deleteUser(1L));
+        assertDoesNotThrow(() -> userService.deleteUser(VALID_ID));
         verify(userRepository).delete(any(User.class));
     }
 
     @Test
-    void setActiveStatus_Success_ShouldUpdateStatus() throws Exception {
-        when(userRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(userRepository).setActiveStatus(1L, false);
+    void setActiveStatusSuccessShouldUpdateStatus() {
+        when(userRepository.existsById(VALID_ID)).thenReturn(true);
+        doNothing().when(userRepository).setActiveStatus(VALID_ID, false);
 
-        assertDoesNotThrow(() -> userService.setActiveStatus(1L, false));
-        verify(userRepository).setActiveStatus(1L, false);
+        assertDoesNotThrow(() -> userService.setActiveStatus(VALID_ID, false));
+        verify(userRepository).setActiveStatus(VALID_ID, false);
     }
 
     @Test
-    void getAllUsers_WithNameAndSurnameFilters_ShouldReturnPage() {
+    @SuppressWarnings("unchecked")
+    void getAllPaymentCardsWithHolderFilterShouldReturnPage() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<User> expectedPage = new PageImpl<>(List.of(user));
 
         when(userRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(expectedPage);
 
-        Page<User> result = userService.getAllUsers("John", "Doe", pageable);
+        Page<User> result = userService.getAllUsers(USER_NAME, USER_SURNAME, pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        assertEquals("John", result.getContent().get(0).getName());
+        assertEquals(USER_NAME, result.getContent().get(0).getName());
         verify(userRepository).findAll(any(Specification.class), eq(pageable));
     }
 }

@@ -24,18 +24,34 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 class UserServiceIntegrationTest {
 
+    private static final String DB_NAME = "testdb";
+    private static final String DB_USER_PASS = "test";
+    private static final String LIQUIBASE_CHANGELOG = "classpath:db/changelog/changelog-master.yml";
+
+    private static final String USER_EMAIL_1 = "john@example.com";
+    private static final String USER_NAME_1 = "John";
+    private static final String USER_SURNAME_1 = "Doe";
+    private static final String UPDATED_NAME = "Johnny";
+    private static final String UPDATED_SURNAME = "Updated";
+
+    private static final String USER_EMAIL_2 = "jane@example.com";
+    private static final String USER_NAME_2 = "Jane";
+    private static final String USER_SURNAME_2 = "Smith";
+
+    private static final Long NOT_FOUND_ID = 999L;
+
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
+            .withDatabaseName(DB_NAME)
+            .withUsername(DB_USER_PASS)
+            .withPassword(DB_USER_PASS);
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.liquibase.change-log", () -> "classpath:db/changelog/changelog-master.yml");
+        registry.add("spring.liquibase.change-log", () -> LIQUIBASE_CHANGELOG);
     }
 
     @Autowired
@@ -49,152 +65,140 @@ class UserServiceIntegrationTest {
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
-        user = new User("John", "Doe", LocalDate.of(1990, 1, 1), "john@example.com", true);
+        user = new User(USER_NAME_1, USER_SURNAME_1, LocalDate.of(1990, 1, 1), USER_EMAIL_1, true);
     }
 
     @Test
-    void createUser_ShouldSaveUserToDatabase() throws Exception {
+    void createUserShouldSaveUserToDatabase() throws Exception {
         User savedUser = userService.createUser(user);
-
         assertNotNull(savedUser.getId());
-        assertEquals("john@example.com", savedUser.getEmail());
+        assertEquals(USER_EMAIL_1, savedUser.getEmail());
 
         User found = userRepository.findById(savedUser.getId()).orElse(null);
         assertNotNull(found);
-        assertEquals("John", found.getName());
-        assertEquals("Doe", found.getSurname());
+        assertEquals(USER_NAME_1, found.getName());
+        assertEquals(USER_SURNAME_1, found.getSurname());
     }
 
     @Test
-    void createUser_DuplicateEmail_ShouldThrowDuplicateResourceException() throws Exception {
+    void createUserDuplicateEmailShouldThrowDuplicateResourceException() throws Exception {
         userService.createUser(user);
-
-        User duplicateUser = new User("Jane", "Smith", LocalDate.of(1995, 5, 15), "john@example.com", true);
+        User duplicateUser = new User(USER_NAME_2, USER_SURNAME_2, LocalDate.of(1995, 5, 15), USER_EMAIL_1, true);
 
         assertThrows(DuplicateResourceException.class, () -> userService.createUser(duplicateUser));
     }
 
     @Test
-    void getUserById_ShouldReturnUser() throws Exception {
+    void getUserByIdShouldReturnUser() throws Exception {
         User savedUser = userRepository.save(user);
-
         User found = userService.getUserById(savedUser.getId());
 
         assertNotNull(found);
         assertEquals(savedUser.getId(), found.getId());
-        assertEquals("John", found.getName());
+        assertEquals(USER_NAME_1, found.getName());
     }
 
     @Test
-    void getUserById_NotFound_ShouldThrowResourceNotFoundException() {
-        assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(999L));
+    void getUserByIdNotFoundShouldThrowResourceNotFoundException() {
+        assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(NOT_FOUND_ID));
     }
 
     @Test
-    void getAllUsers_WithPagination_ShouldReturnPage() throws Exception {
+    void getAllUsersWithPaginationShouldReturnPage() throws Exception {
         userService.createUser(user);
-        userService.createUser(new User("Jane", "Smith", LocalDate.of(1995, 5, 15), "jane@example.com", true));
+        userService.createUser(new User(USER_NAME_2, USER_SURNAME_2, LocalDate.of(1995, 5, 15), USER_EMAIL_2, true));
 
         Page<User> page = userService.getAllUsers(null, null, PageRequest.of(0, 10));
-
         assertEquals(2, page.getTotalElements());
     }
 
     @Test
-    void getAllUsers_WithNameFilter_ShouldReturnFilteredResults() throws Exception {
+    void getAllUsersWithNameFilterShouldReturnFilteredResults() throws Exception {
         userService.createUser(user);
-        userService.createUser(new User("Jane", "Smith", LocalDate.of(1995, 5, 15), "jane@example.com", true));
+        userService.createUser(new User(USER_NAME_2, USER_SURNAME_2, LocalDate.of(1995, 5, 15), USER_EMAIL_2, true));
 
-        Page<User> page = userService.getAllUsers("John", null, PageRequest.of(0, 10));
-
+        Page<User> page = userService.getAllUsers(USER_NAME_1, null, PageRequest.of(0, 10));
         assertEquals(1, page.getTotalElements());
-        assertEquals("John", page.getContent().get(0).getName());
+        assertEquals(USER_NAME_1, page.getContent().get(0).getName());
     }
 
     @Test
-    void getAllUsers_WithSurnameFilter_ShouldReturnFilteredResults() throws Exception {
+    void getAllUsersWithSurnameFilterShouldReturnFilteredResults() throws Exception {
         userService.createUser(user);
-        userService.createUser(new User("Jane", "Smith", LocalDate.of(1995, 5, 15), "jane@example.com", true));
+        userService.createUser(new User(USER_NAME_2, USER_SURNAME_2, LocalDate.of(1995, 5, 15), USER_EMAIL_2, true));
 
-        Page<User> page = userService.getAllUsers(null, "Smith", PageRequest.of(0, 10));
-
+        Page<User> page = userService.getAllUsers(null, USER_SURNAME_2, PageRequest.of(0, 10));
         assertEquals(1, page.getTotalElements());
-        assertEquals("Smith", page.getContent().get(0).getSurname());
+        assertEquals(USER_SURNAME_2, page.getContent().get(0).getSurname());
     }
 
     @Test
-    void getAllUsers_WithBothFilters_ShouldReturnFilteredResults() throws Exception {
+    void getAllUsersWithBothFiltersShouldReturnFilteredResults() throws Exception {
         userService.createUser(user);
-        userService.createUser(new User("Jane", "Smith", LocalDate.of(1995, 5, 15), "jane@example.com", true));
+        userService.createUser(new User(USER_NAME_2, USER_SURNAME_2, LocalDate.of(1995, 5, 15), USER_EMAIL_2, true));
 
-        Page<User> page = userService.getAllUsers("Jane", "Smith", PageRequest.of(0, 10));
-
+        Page<User> page = userService.getAllUsers(USER_NAME_2, USER_SURNAME_2, PageRequest.of(0, 10));
         assertEquals(1, page.getTotalElements());
-        assertEquals("Jane", page.getContent().get(0).getName());
-        assertEquals("Smith", page.getContent().get(0).getSurname());
+        assertEquals(USER_NAME_2, page.getContent().get(0).getName());
+        assertEquals(USER_SURNAME_2, page.getContent().get(0).getSurname());
     }
 
     @Test
-    void updateUser_ShouldUpdateUser() throws Exception {
+    void updateUserShouldUpdateUser() throws Exception {
         User savedUser = userRepository.save(user);
-        savedUser.setName("Johnny");
-        savedUser.setSurname("Updated");
+        savedUser.setName(UPDATED_NAME);
+        savedUser.setSurname(UPDATED_SURNAME);
 
         User updated = userService.updateUser(savedUser.getId(), savedUser);
-
-        assertEquals("Johnny", updated.getName());
-        assertEquals("Updated", updated.getSurname());
+        assertEquals(UPDATED_NAME, updated.getName());
+        assertEquals(UPDATED_SURNAME, updated.getSurname());
 
         User fromDb = userRepository.findById(savedUser.getId()).orElse(null);
-        assertEquals("Johnny", fromDb.getName());
-        assertEquals("Updated", fromDb.getSurname());
+        assertNotNull(fromDb);
+        assertEquals(UPDATED_NAME, fromDb.getName());
+        assertEquals(UPDATED_SURNAME, fromDb.getSurname());
     }
 
     @Test
-    void updateUser_NotFound_ShouldThrowResourceNotFoundException() {
-        user.setId(999L);
-
-        assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(999L, user));
+    void updateUserNotFoundShouldThrowResourceNotFoundException() {
+        user.setId(NOT_FOUND_ID);
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(NOT_FOUND_ID, user));
     }
 
     @Test
-    void updateUser_WithDuplicateEmail_ShouldThrowDuplicateResourceException() throws Exception {
+    void updateUserWithDuplicateEmailShouldThrowDuplicateResourceException() throws Exception {
         userService.createUser(user);
-
-        User anotherUser = new User("Jane", "Smith", LocalDate.of(1995, 5, 15), "jane@example.com", true);
+        User anotherUser = new User(USER_NAME_2, USER_SURNAME_2, LocalDate.of(1995, 5, 15), USER_EMAIL_2, true);
         User savedAnother = userService.createUser(anotherUser);
-
-        savedAnother.setEmail("john@example.com");
+        savedAnother.setEmail(USER_EMAIL_1);
 
         assertThrows(DuplicateResourceException.class, () -> userService.updateUser(savedAnother.getId(), savedAnother));
     }
 
     @Test
-    void deleteUser_ShouldDeleteUser() throws Exception {
+    void deleteUserShouldDeleteUser() throws Exception {
         User savedUser = userRepository.save(user);
-
         userService.deleteUser(savedUser.getId());
-
         assertFalse(userRepository.findById(savedUser.getId()).isPresent());
     }
 
     @Test
-    void deleteUser_NotFound_ShouldThrowResourceNotFoundException() {
-        assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(999L));
+    void deleteUserNotFoundShouldThrowResourceNotFoundException() {
+        assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(NOT_FOUND_ID));
     }
 
     @Test
-    void setActiveStatus_ShouldUpdateUserStatus() throws Exception {
+    void setActiveStatusShouldUpdateUserStatus() throws Exception {
         User savedUser = userRepository.save(user);
-
         userService.setActiveStatus(savedUser.getId(), false);
 
         User fromDb = userRepository.findById(savedUser.getId()).orElse(null);
+        assertNotNull(fromDb);
         assertFalse(fromDb.isActive());
     }
 
     @Test
-    void setActiveStatus_NotFound_ShouldThrowResourceNotFoundException() {
-        assertThrows(ResourceNotFoundException.class, () -> userService.setActiveStatus(999L, false));
+    void setActiveStatusNotFoundShouldThrowResourceNotFoundException() {
+        assertThrows(ResourceNotFoundException.class, () -> userService.setActiveStatus(NOT_FOUND_ID, false));
     }
 }

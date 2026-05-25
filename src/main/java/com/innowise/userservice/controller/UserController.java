@@ -37,7 +37,7 @@ public class UserController {
     private PaymentCardMapper paymentCardMapper;
 
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) throws DuplicateResourceException, ServiceException {
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) throws ServiceException {
         User user = userMapper.toEntity(userDto);
         User savedUser = userService.createUser(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(userMapper.toDto(savedUser));
@@ -60,7 +60,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) throws ResourceNotFoundException, DuplicateResourceException, ServiceException {
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @Valid @RequestBody UserDto userDto) throws ServiceException {
         User user = userMapper.toEntity(userDto);
         User updatedUser = userService.updateUser(id, user);
         return ResponseEntity.ok(userMapper.toDto(updatedUser));
