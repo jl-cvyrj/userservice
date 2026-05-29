@@ -34,6 +34,13 @@ public class User implements Serializable {
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
+    @Column(name = "password_hash")
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private UserRole role;
+
     @Column(name = "active")
     private boolean active;
 
@@ -87,6 +94,14 @@ public class User implements Serializable {
         return email;
     }
 
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -117,6 +132,14 @@ public class User implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 
     public void setActive(boolean active) {
