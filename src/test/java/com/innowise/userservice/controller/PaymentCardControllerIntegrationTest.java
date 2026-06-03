@@ -6,7 +6,6 @@ import com.innowise.userservice.repository.PaymentCardRepository;
 import com.innowise.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -22,7 +21,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.time.LocalDate;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -55,6 +57,18 @@ class PaymentCardControllerIntegrationTest {
             .withUsername(DB_USER_PASS)
             .withPassword(DB_USER_PASS);
 
+    private final TestRestTemplate restTemplate;
+    private final UserRepository userRepository;
+    private final PaymentCardRepository cardRepository;
+
+    private Long userId;
+
+    PaymentCardControllerIntegrationTest(TestRestTemplate restTemplate, UserRepository userRepository, PaymentCardRepository cardRepository) {
+        this.restTemplate = restTemplate;
+        this.userRepository = userRepository;
+        this.cardRepository = cardRepository;
+    }
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -63,16 +77,6 @@ class PaymentCardControllerIntegrationTest {
         registry.add("spring.liquibase.change-log", () -> LIQUIBASE_CHANGELOG);
     }
 
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PaymentCardRepository cardRepository;
-
-    private Long userId;
 
     @BeforeEach
     void setUp() {

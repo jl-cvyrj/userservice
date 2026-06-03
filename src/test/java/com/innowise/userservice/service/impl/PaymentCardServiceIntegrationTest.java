@@ -9,7 +9,6 @@ import com.innowise.userservice.repository.PaymentCardRepository;
 import com.innowise.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -20,7 +19,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Testcontainers
@@ -47,6 +49,19 @@ class PaymentCardServiceIntegrationTest {
             .withUsername(DB_USER_PASS)
             .withPassword(DB_USER_PASS);
 
+    private final PaymentCardServiceImpl cardService;
+    private final UserRepository userRepository;
+    private final PaymentCardRepository cardRepository;
+
+    private User user;
+    private PaymentCardDto paymentCardDto;
+
+    PaymentCardServiceIntegrationTest(PaymentCardServiceImpl cardService, UserRepository userRepository, PaymentCardRepository cardRepository) {
+        this.cardService = cardService;
+        this.userRepository = userRepository;
+        this.cardRepository = cardRepository;
+    }
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -54,18 +69,6 @@ class PaymentCardServiceIntegrationTest {
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.liquibase.change-log", () -> LIQUIBASE_CHANGELOG);
     }
-
-    @Autowired
-    private PaymentCardServiceImpl cardService;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PaymentCardRepository cardRepository;
-
-    private User user;
-    private PaymentCardDto paymentCardDto;
 
     @BeforeEach
     void setUp() {

@@ -60,4 +60,11 @@ public class GlobalExceptionHandler {
         error.put("error", "Internal server error. Please contact support.");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
+
+    @ExceptionHandler(TokenException.class)
+    public ResponseEntity<Map<String, String>> handleTokenException(TokenException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
 }

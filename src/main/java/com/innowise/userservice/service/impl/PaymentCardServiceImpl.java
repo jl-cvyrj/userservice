@@ -3,12 +3,12 @@ package com.innowise.userservice.service.impl;
 import com.innowise.userservice.dto.PaymentCardDto;
 import com.innowise.userservice.entity.PaymentCard;
 import com.innowise.userservice.entity.User;
-import com.innowise.userservice.exception.*;
+import com.innowise.userservice.exception.BusinessLogicException;
+import com.innowise.userservice.exception.ResourceNotFoundException;
 import com.innowise.userservice.repository.PaymentCardRepository;
 import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.PaymentCardService;
 import com.innowise.userservice.specification.PaymentCardSpecifications;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,11 +21,15 @@ import java.util.List;
 @Service
 public class PaymentCardServiceImpl implements PaymentCardService {
 
-    @Autowired
-    public PaymentCardRepository paymentCardRepository;
+    public final PaymentCardRepository paymentCardRepository;
+    public final UserRepository userRepository;
 
-    @Autowired
-    public UserRepository userRepository;
+    public static final int MAX_PAYMENT_CARDS = 5;
+
+    public PaymentCardServiceImpl(PaymentCardRepository paymentCardRepository, UserRepository userRepository) {
+        this.paymentCardRepository = paymentCardRepository;
+        this.userRepository = userRepository;
+    }
 
     @CacheEvict(value = "user", key = "#paymentCardDto.userId")
     public PaymentCard createPaymentCard(PaymentCardDto paymentCardDto) throws BusinessLogicException, ResourceNotFoundException {
@@ -36,7 +40,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         int paymentCards = paymentCardRepository.countPaymentCardsByUserId(userId);
-        if (paymentCards >= 5) {
+        if (paymentCards >= MAX_PAYMENT_CARDS) {
             throw new BusinessLogicException("User cannot have more than 5 cards");
         }
 

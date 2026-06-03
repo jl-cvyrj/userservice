@@ -6,7 +6,6 @@ import com.innowise.userservice.exception.ResourceNotFoundException;
 import com.innowise.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,7 +17,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Testcontainers
@@ -46,6 +48,14 @@ class UserServiceIntegrationTest {
             .withUsername(DB_USER_PASS)
             .withPassword(DB_USER_PASS);
 
+    private final UserServiceImpl userService;
+    private final UserRepository userRepository;
+
+    UserServiceIntegrationTest(UserServiceImpl userService, UserRepository userRepository) {
+        this.userService = userService;
+        this.userRepository = userRepository;
+    }
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -53,12 +63,6 @@ class UserServiceIntegrationTest {
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.liquibase.change-log", () -> LIQUIBASE_CHANGELOG);
     }
-
-    @Autowired
-    private UserServiceImpl userService;
-
-    @Autowired
-    private UserRepository userRepository;
 
     private User user;
 

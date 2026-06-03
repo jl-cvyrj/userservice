@@ -1,5 +1,6 @@
 package com.innowise.userservice.service;
 
+import com.innowise.userservice.exception.TokenException;
 import io.jsonwebtoken.Claims;
 
 public interface JwtService {
@@ -10,5 +11,7 @@ public interface JwtService {
 
     String extractRole(String token);
 
-    boolean isTokenValid(String token);
+    void isTokenValid(String token) throws TokenException;
+
+    public String extractTokenType(String token);
 }

@@ -1,14 +1,14 @@
 package com.innowise.userservice.dto;
 
-public class UserAuthDTO {
+public class UserAuthDto {
     private Long id;
     private String email;
     private String role;
     private boolean active;
 
-    public UserAuthDTO() {}
+    public UserAuthDto() {}
 
-    public UserAuthDTO(Long id, String email, String role, boolean active) {
+    public UserAuthDto(Long id, String email, String role, boolean active) {
         this.id = id;
         this.email = email;
         this.role = role;

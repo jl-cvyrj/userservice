@@ -1,9 +1,19 @@
 package com.innowise.userservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.OneToMany;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
@@ -33,9 +43,6 @@ public class User implements Serializable {
 
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
-
-    @Column(name = "password_hash")
-    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
@@ -94,10 +101,6 @@ public class User implements Serializable {
         return email;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
     public UserRole getRole() {
         return role;
     }
@@ -132,10 +135,6 @@ public class User implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
     }
 
     public void setRole(UserRole role) {
