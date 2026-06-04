@@ -4,6 +4,7 @@ import com.innowise.userservice.dto.UserDto;
 import com.innowise.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
@@ -60,13 +61,11 @@ class UserControllerIntegrationTest {
             .withUsername(DB_USER_PASS)
             .withPassword(DB_USER_PASS);
 
-    private final TestRestTemplate restTemplate;
-    private final UserRepository userRepository;
+    @Autowired
+    private TestRestTemplate restTemplate;
 
-    UserControllerIntegrationTest(TestRestTemplate restTemplate, UserRepository userRepository) {
-        this.restTemplate = restTemplate;
-        this.userRepository = userRepository;
-    }
+    @Autowired
+    private UserRepository userRepository;
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {

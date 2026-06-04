@@ -6,6 +6,7 @@ import com.innowise.userservice.exception.ResourceNotFoundException;
 import com.innowise.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -48,13 +49,11 @@ class UserServiceIntegrationTest {
             .withUsername(DB_USER_PASS)
             .withPassword(DB_USER_PASS);
 
-    private final UserServiceImpl userService;
-    private final UserRepository userRepository;
+    @Autowired
+    private UserServiceImpl userService;
 
-    UserServiceIntegrationTest(UserServiceImpl userService, UserRepository userRepository) {
-        this.userService = userService;
-        this.userRepository = userRepository;
-    }
+    @Autowired
+    private UserRepository userRepository;
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
