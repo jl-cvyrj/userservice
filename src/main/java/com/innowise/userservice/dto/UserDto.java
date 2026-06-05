@@ -1,18 +1,25 @@
 package com.innowise.userservice.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDate;
 
 public class UserDto {
 
     private Long id;
 
+    public static final int MIN_NAME_LENGHT = 2;
+    public static final int MAX_NAME_LENGHT = 100;
+
     @NotBlank(message = "Name is required")
-    @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
+    @Size(min = MIN_NAME_LENGHT, max = MAX_NAME_LENGHT, message = "Name must be between 2 and 100 characters")
     private String name;
 
     @NotBlank(message = "Surname is required")
-    @Size(min = 2, max = 100, message = "Surname must be between 2 and 100 characters")
+    @Size(min = MIN_NAME_LENGHT, max = MAX_NAME_LENGHT, message = "Surname must be between 2 and 100 characters")
     private String surname;
 
     @Past(message = "Birth date must be in the past")

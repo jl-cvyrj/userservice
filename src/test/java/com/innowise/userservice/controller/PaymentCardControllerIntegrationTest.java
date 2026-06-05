@@ -22,7 +22,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.time.LocalDate;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -55,14 +58,6 @@ class PaymentCardControllerIntegrationTest {
             .withUsername(DB_USER_PASS)
             .withPassword(DB_USER_PASS);
 
-    @DynamicPropertySource
-    static void properties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.liquibase.change-log", () -> LIQUIBASE_CHANGELOG);
-    }
-
     @Autowired
     private TestRestTemplate restTemplate;
 
@@ -73,6 +68,14 @@ class PaymentCardControllerIntegrationTest {
     private PaymentCardRepository cardRepository;
 
     private Long userId;
+
+    @DynamicPropertySource
+    static void properties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+        registry.add("spring.liquibase.change-log", () -> LIQUIBASE_CHANGELOG);
+    }
 
     @BeforeEach
     void setUp() {
@@ -92,9 +95,7 @@ class PaymentCardControllerIntegrationTest {
     @Test
     void createCardShouldReturn201() {
         PaymentCardDto cardDto = createCardDto();
-
         ResponseEntity<PaymentCardDto> response = restTemplate.postForEntity(API_PAYMENT_CARDS, cardDto, PaymentCardDto.class);
-
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
         assertNotNull(response.getBody().getId());
@@ -105,14 +106,12 @@ class PaymentCardControllerIntegrationTest {
     void createCardUserNotFoundShouldReturn404() {
         PaymentCardDto cardDto = createCardDto();
         cardDto.setUserId(999L);
-
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 API_PAYMENT_CARDS,
                 HttpMethod.POST,
                 new HttpEntity<>(cardDto),
                 new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
         );
-
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
@@ -123,17 +122,14 @@ class PaymentCardControllerIntegrationTest {
             cardDto.setNumber(CARD_NUM_PREFIX + i);
             restTemplate.postForEntity(API_PAYMENT_CARDS, cardDto, PaymentCardDto.class);
         }
-
         PaymentCardDto sixthCard = createCardDto();
         sixthCard.setNumber(ALTERNATIVE_CARD_NUMBER);
-
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 API_PAYMENT_CARDS,
                 HttpMethod.POST,
                 new HttpEntity<>(sixthCard),
                 new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
         );
-
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
     }
@@ -141,9 +137,7 @@ class PaymentCardControllerIntegrationTest {
     @Test
     void getCardByIdShouldReturn200() {
         PaymentCardDto saved = createCard();
-
         ResponseEntity<PaymentCardDto> response = restTemplate.getForEntity(API_PAYMENT_CARDS_PATH + saved.getId(), PaymentCardDto.class);
-
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(saved.getId(), response.getBody().getId());
@@ -157,17 +151,14 @@ class PaymentCardControllerIntegrationTest {
                 null,
                 new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
         );
-
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
     @Test
     void getCardsByUserIdShouldReturn200() {
         createCard();
-
         ResponseEntity<PaymentCardDto[]> response = restTemplate.getForEntity(
                 API_USERS_PATH + userId + PAYMENT_CARDS_SUBPATH, PaymentCardDto[].class);
-
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().length > 0);
@@ -177,7 +168,6 @@ class PaymentCardControllerIntegrationTest {
     void getCardsByUserIdNoCardsShouldReturnEmptyList() {
         ResponseEntity<PaymentCardDto[]> response = restTemplate.getForEntity(
                 API_USERS_PATH + userId + PAYMENT_CARDS_SUBPATH, PaymentCardDto[].class);
-
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(0, response.getBody().length);
@@ -188,52 +178,41 @@ class PaymentCardControllerIntegrationTest {
         PaymentCardDto saved = createCard();
         saved.setNumber(ALTERNATIVE_CARD_NUMBER);
         saved.setActive(false);
-
         ResponseEntity<PaymentCardDto> response = restTemplate.exchange(
                 API_PAYMENT_CARDS_PATH + saved.getId(),
                 HttpMethod.PUT,
                 new HttpEntity<>(saved),
                 PaymentCardDto.class
         );
-
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(ALTERNATIVE_CARD_NUMBER, response.getBody().getNumber());
-        falseAssert(response.getBody().isActive());
-    }
-
-    private void falseAssert(boolean condition) {
-        assertFalse(condition);
+        assertFalse(response.getBody().isActive());
     }
 
     @Test
     void updateCardNotFoundShouldReturn404() {
         PaymentCardDto cardDto = createCardDto();
         cardDto.setId(999L);
-
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
                 API_PAYMENT_CARDS_PATH + ID_999,
                 HttpMethod.PUT,
                 new HttpEntity<>(cardDto),
                 new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
         );
-
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 
     @Test
     void setActiveStatusShouldReturn204() {
         PaymentCardDto saved = createCard();
-
         ResponseEntity<Void> response = restTemplate.exchange(
                 API_PAYMENT_CARDS_PATH + saved.getId() + ACTIVE_FALSE_PARAM,
                 HttpMethod.PATCH,
                 null,
                 Void.class
         );
-
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-
         ResponseEntity<PaymentCardDto> getResponse = restTemplate.getForEntity(
                 API_PAYMENT_CARDS_PATH + saved.getId(), PaymentCardDto.class);
         assertNotNull(getResponse.getBody());
@@ -248,7 +227,6 @@ class PaymentCardControllerIntegrationTest {
                 null,
                 new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
         );
-
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     }
 

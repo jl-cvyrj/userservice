@@ -36,6 +36,7 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: securityTokenForTheTaskMircoServices123321
     ports:
       - "8080:8080"
     networks:

@@ -1,7 +1,9 @@
 package com.innowise.userservice.service.impl;
 
 import com.innowise.userservice.entity.User;
-import com.innowise.userservice.exception.*;
+import com.innowise.userservice.exception.DuplicateResourceException;
+import com.innowise.userservice.exception.ResourceNotFoundException;
+import com.innowise.userservice.exception.ServiceException;
 import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.UserService;
 import com.innowise.userservice.specification.UserSpecifications;
@@ -46,7 +48,7 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @CachePut(value = "user", key = "#id")
-    public User updateUser(Long id, User updatedUser) throws ResourceNotFoundException, DuplicateResourceException, ServiceException {
+    public User updateUser(Long id, User updatedUser) throws ServiceException {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_MESSAGE + id));
 
