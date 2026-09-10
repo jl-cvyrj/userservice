@@ -46,7 +46,7 @@ public class User implements Serializable {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private UserRole role;
+    private UserRole role = UserRole.USER;
 
     @Column(name = "active")
     private boolean active;
@@ -79,6 +79,7 @@ public class User implements Serializable {
         this.birthDate = birthDate;
         this.email = email;
         this.active = active;
+        this.role = UserRole.USER;
     }
 
     public Long getId() {

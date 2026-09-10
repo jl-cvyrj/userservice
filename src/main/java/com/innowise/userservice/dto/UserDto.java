@@ -1,5 +1,6 @@
 package com.innowise.userservice.dto;
 
+import com.innowise.userservice.entity.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
@@ -28,6 +29,8 @@ public class UserDto {
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
     private String email;
+
+    private UserRole role;
 
     private boolean active;
 
@@ -80,6 +83,14 @@ public class UserDto {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 
     public boolean isActive() {

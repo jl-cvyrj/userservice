@@ -1,6 +1,7 @@
 package com.innowise.userservice.service.impl;
 
 import com.innowise.userservice.entity.User;
+import com.innowise.userservice.entity.UserRole;
 import com.innowise.userservice.exception.DuplicateResourceException;
 import com.innowise.userservice.exception.ResourceNotFoundException;
 import com.innowise.userservice.exception.ServiceException;
@@ -29,6 +30,9 @@ public class UserServiceImpl implements UserService {
     public User createUser(User user) throws ServiceException {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new DuplicateResourceException(EMAIL_ALREADY_EXISTS_MESSAGE + user.getEmail());
+        }
+        if (user.getRole() == null) {
+            user.setRole(UserRole.USER);
         }
         return userRepository.save(user);
     }
