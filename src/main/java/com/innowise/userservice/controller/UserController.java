@@ -47,7 +47,7 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SERVICE')")
     public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) throws ServiceException {
         User user = userMapper.toEntity(userDto);
         User savedUser = userService.createUser(user);
@@ -55,7 +55,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SERVICE') or #id == authentication.principal")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) throws ResourceNotFoundException {
         User user = userService.getUserById(id);
         return ResponseEntity.ok(userMapper.toDto(user));

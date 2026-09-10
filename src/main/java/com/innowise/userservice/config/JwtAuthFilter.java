@@ -39,13 +39,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             try {
                 jwtService.isTokenValid(token);
                 String tokenType = jwtService.extractTokenType(token);
-                if("access".equals(tokenType)) {
-                    Long userId = jwtService.extractUserId(token);
+                if ("access".equals(tokenType)) {
                     String roleFromToken = jwtService.extractRole(token);
                     UserRole role = UserRole.valueOf(roleFromToken);
 
+                    Object principal = "SERVICE".equals(roleFromToken)
+                            ? "SERVICE"
+                            : jwtService.extractUserId(token);
+
                     UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                            userId, null, List.of(role)
+                            principal, null, List.of(role)
                     );
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
